@@ -10,12 +10,11 @@ test-watch:  ## Run tests on file changes
 	ptw .
 
 lint:  ## Run linting
-	flake8 credentials.py test_*.py
-	isort --check-only credentials.py test_*.py
+	ruff check
 
 format:  ## Format code
-	black credentials.py test_*.py
-	isort credentials.py test_*.py
+	ruff check --select I --fix
+	ruff format
 
 type-check:  ## Run type checking
 	mypy

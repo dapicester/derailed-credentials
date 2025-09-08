@@ -1,8 +1,8 @@
 import re
-import pytest
 import subprocess
 import sys
-from unittest.mock import patch
+
+import pytest
 
 from credentials.core import Credentials
 
@@ -25,14 +25,16 @@ class TestCLI:
 
     def run_cli(self, args, cli_env):
         cmd = [
-            sys.executable, "-m", "credentials",
-            "--credentials-path", cli_env["creds_path"],
-            "--master-key-path", cli_env["key_path"],
+            sys.executable,
+            "-m",
+            "credentials",
+            "--credentials-path",
+            cli_env["creds_path"],
+            "--master-key-path",
+            cli_env["key_path"],
         ] + args
 
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, cwd=cli_env["cwd"]
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cli_env["cwd"])
 
         return result
 
@@ -42,13 +44,15 @@ class TestCLI:
         assert result.returncode == 0
         assert "usage: credentials [-h]" in result.stdout
 
-
     def test_cli_generate_key(self, temp_dir, project_root_dir):
         key_path = temp_dir / "test_master.key"
 
         cmd = [
-            sys.executable, "-m", "credentials",
-            "--master-key-path", str(key_path),
+            sys.executable,
+            "-m",
+            "credentials",
+            "--master-key-path",
+            str(key_path),
             "generate-key",
         ]
 

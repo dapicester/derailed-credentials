@@ -1,11 +1,8 @@
-import os
-import pytest
-import tempfile
-import yaml
 from pathlib import Path
-from unittest.mock import patch
 
-from credentials.core import Credentials, CredentialsError
+import pytest
+
+from credentials.core import Credentials
 
 
 class TestCredentialsIntegration:

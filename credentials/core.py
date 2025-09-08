@@ -1,10 +1,10 @@
 import base64
 import os
 import tempfile
-import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
+import yaml
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -39,10 +39,12 @@ class Credentials:
     MASTER_KEY_ENV = "MASTER_KEY"
     SALT = b"credentials_salt"  # TODO: make this configurable
 
-    def __init__(self,
-                 credentials_path: str | None = None,
-                 master_key_path: str | None = None,
-                 master_key_env: str | None = None):
+    def __init__(
+        self,
+        credentials_path: str | None = None,
+        master_key_path: str | None = None,
+        master_key_env: str | None = None,
+    ):
         """
         Initialize credentials manager.
 
@@ -81,10 +83,9 @@ class Credentials:
     def _derive_key(self, master_key: str) -> bytes:
         """Derive encryption key from master key using PBKDF2."""
 
-        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
-                         length=32,
-                         salt=self.SALT,
-                         iterations=100000)
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(), length=32, salt=self.SALT, iterations=100000
+        )
         key = base64.urlsafe_b64encode(kdf.derive(master_key.encode()))
         return key
 
@@ -159,7 +160,7 @@ class Credentials:
             The credential value or default
         """
 
-        keys = key.split('.')
+        keys = key.split(".")
 
         value = self.config()
         for k in keys:
@@ -180,7 +181,7 @@ class Credentials:
         """
 
         config = self.config()
-        keys = key.split('.')
+        keys = key.split(".")
 
         current = config
         for k in keys[:-1]:
@@ -203,7 +204,7 @@ class Credentials:
         """
 
         config = self.config()
-        keys = key.split('.')
+        keys = key.split(".")
 
         current = config
 
@@ -226,7 +227,9 @@ class Credentials:
         """Dump the configuration dictionary to a YAML string."""
         if not config:
             return ""
-        return yaml.dump(config, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        return yaml.dump(
+            config, default_flow_style=False, allow_unicode=True, sort_keys=False
+        )
 
     def _save_config(self, config: Dict[str, Any]) -> None:
         """Save configuration to encrypted file."""
@@ -242,7 +245,8 @@ class Credentials:
     @classmethod
     def open_external_editor(cls, file_name):
         import subprocess
-        editor = os.environ.get('EDITOR', 'nano')
+
+        editor = os.environ.get("EDITOR", "nano")
         subprocess.run([editor, file_name], check=True)
 
     def edit(self, editor: str | None = None, fake: bool = False) -> bool:
@@ -260,7 +264,7 @@ class Credentials:
         current_content = self.show()
 
         # Create temporary file
-        with tempfile.NamedTemporaryFile(mode='w+', suffix='.yml') as tmp_file:
+        with tempfile.NamedTemporaryFile(mode="w+", suffix=".yml") as tmp_file:
             tmp_file.write(current_content)
             tmp_file.flush()
 
@@ -269,7 +273,7 @@ class Credentials:
                 self.open_external_editor(tmp_file.name)
 
             # Read back the content
-            with open(tmp_file.name, 'r') as f:
+            with open(tmp_file.name, "r") as f:
                 new_content = f.read()
 
             # Parse and save if changed
@@ -299,10 +303,12 @@ class Credentials:
             The generated master key
         """
         if self.master_key_path.exists() and force is False:
-            raise MasterKeyAlreadyExists(f"Master key file {self.master_key_path} already exists.")
+            raise MasterKeyAlreadyExists(
+                f"Master key file {self.master_key_path} already exists."
+            )
 
         master_key = self.generate_master_key()
-        self.master_key_path.write_text(master_key + '\n')
+        self.master_key_path.write_text(master_key + "\n")
         self.master_key_path.chmod(0o600)  # Read/write for owner only
 
         return master_key

@@ -1,8 +1,9 @@
 import base64
 import os
+from unittest.mock import MagicMock, mock_open, patch
+
 import pytest
 import yaml
-from unittest.mock import patch, mock_open, MagicMock
 
 from credentials.core import (
     Credentials,
@@ -168,7 +169,7 @@ class TestCredentials:
 
         with patch.dict(os.environ, {}, clear=True):
             # No EDITOR set, defaults to nano
-            fp.register(['nano', mock_file.name])
+            fp.register(["nano", mock_file.name])
 
             with patch("builtins.open", mock_open(read_data=new_content)):
                 with patch.object(
@@ -187,7 +188,7 @@ class TestCredentials:
 
         with patch.dict(os.environ, {"EDITOR": "/usr/bin/nvim"}):
             # Use EDITOR
-            fp.register(['/usr/bin/nvim', mock_file.name])
+            fp.register(["/usr/bin/nvim", mock_file.name])
 
             with patch("builtins.open", mock_open(read_data=content)):
                 with patch.object(credentials_with_key, "show", return_value=content):

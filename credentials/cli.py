@@ -5,7 +5,9 @@ from .core import Credentials, CredentialsError, MasterKeyAlreadyExists
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="credentials", description="Manage encrypted credentials")
+    parser = argparse.ArgumentParser(
+        prog="credentials", description="Manage encrypted credentials"
+    )
     parser.add_argument("--credentials-path", help="Path to credentials file")
     parser.add_argument("--master-key-path", help="Path to master key file")
     parser.add_argument("--master-key-env", help="Environment variable for master key")
@@ -15,7 +17,9 @@ def build_parser() -> argparse.ArgumentParser:
     # Edit command
     edit_parser = subparsers.add_parser("edit", help="Edit credentials")
     edit_parser.add_argument("--editor", help="Editor to use")
-    edit_parser.add_argument("--pretend", help="Do not actually edit the file", action="store_true")
+    edit_parser.add_argument(
+        "--pretend", help="Do not actually edit the file", action="store_true"
+    )
 
     # Show command
     subparsers.add_parser("show", help="Show decrypted credentials")
