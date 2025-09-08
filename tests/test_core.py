@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 import yaml
 
-from credentials.core import (
+from derailed.core import (
     Credentials,
     CredentialsError,
     MasterKeyAlreadyExists,

@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from credentials.core import Credentials
+from derailed.core import Credentials
 
 
 class TestCLI:
@@ -27,7 +27,7 @@ class TestCLI:
         cmd = [
             sys.executable,
             "-m",
-            "credentials",
+            "derailed",
             "--credentials-path",
             cli_env["creds_path"],
             "--master-key-path",
@@ -42,7 +42,7 @@ class TestCLI:
         result = self.run_cli([], cli_env)
 
         assert result.returncode == 0
-        assert "usage: credentials [-h]" in result.stdout
+        assert "usage: derailed [-h]" in result.stdout
 
     def test_cli_generate_key(self, temp_dir, project_root_dir):
         key_path = temp_dir / "test_master.key"
@@ -50,7 +50,7 @@ class TestCLI:
         cmd = [
             sys.executable,
             "-m",
-            "credentials",
+            "derailed",
             "--master-key-path",
             str(key_path),
             "generate-key",

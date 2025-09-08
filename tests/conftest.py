@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from credentials.core import Credentials
+from derailed.core import Credentials
 
 
 @pytest.fixture

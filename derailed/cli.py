@@ -6,7 +6,7 @@ from .core import Credentials, CredentialsError, MasterKeyAlreadyExists
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="credentials", description="Manage encrypted credentials"
+        prog="derailed", description="Manage encrypted credentials"
     )
     parser.add_argument("--credentials-path", help="Path to credentials file")
     parser.add_argument("--master-key-path", help="Path to master key file")
