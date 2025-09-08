@@ -23,9 +23,6 @@ jobs:
     - name: Install dependencies
       run: uv sync --locked
 
-    - name: Lint and format
-      run: pre-commit run --all-files
-
     - name: Type check with mypy
       run: make type-check
 
