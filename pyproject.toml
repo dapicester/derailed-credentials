@@ -32,6 +32,7 @@ dev = [
     "pytest-notifier>=1.0.4",
     "pytest-subprocess>=1.5.3",
     "ruff>=0.12.12",
+    "pre-commit>=4.3.0",
 ]
 
 [tool.mypy]
