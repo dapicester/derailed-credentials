@@ -5,6 +5,11 @@ build/
 dist/
 wheels/
 *.egg-info
+.coverage
+htmlcov/
 
 # Virtual environments
 .venv
+
+# used for test runs
+/config

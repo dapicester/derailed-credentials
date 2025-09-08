@@ -21,4 +21,14 @@ dev = [
     "isort>=6.0.1",
     "mypy>=1.17.1",
     "flake8>=7.3.0",
+    "types-pyyaml>=6.0.12.20250822",
+    "ipdb>=0.13.13",
+    "pytest-watch>=4.2.0",
+    "pytest-notifier>=1.0.4",
+    "pytest-subprocess>=1.5.3",
+]
+
+[tool.mypy]
+files = [
+    "credentials/"
 ]

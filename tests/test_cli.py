@@ -1,0 +1,113 @@
+import re
+import pytest
+import subprocess
+import sys
+from unittest.mock import patch
+
+from credentials.core import Credentials
+
+
+class TestCLI:
+    @pytest.fixture
+    def cli_env(self, temp_dir, project_root_dir):
+        # TODO: DRY
+        creds_path = temp_dir / "credentials.yml.enc"
+        key_path = temp_dir / "master.key"
+        master_key = Credentials.generate_master_key()
+        key_path.write_text(master_key)
+
+        return {
+            "creds_path": str(creds_path),
+            "key_path": str(key_path),
+            "master_key": master_key,
+            "cwd": str(project_root_dir),
+        }
+
+    def run_cli(self, args, cli_env):
+        cmd = [
+            sys.executable, "-m", "credentials",
+            "--credentials-path", cli_env["creds_path"],
+            "--master-key-path", cli_env["key_path"],
+        ] + args
+
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, cwd=cli_env["cwd"]
+        )
+
+        return result
+
+    def test_help(self, cli_env):
+        result = self.run_cli([], cli_env)
+
+        assert result.returncode == 0
+        assert "usage: credentials [-h]" in result.stdout
+
+
+    def test_cli_generate_key(self, temp_dir, project_root_dir):
+        key_path = temp_dir / "test_master.key"
+
+        cmd = [
+            sys.executable, "-m", "credentials",
+            "--master-key-path", str(key_path),
+            "generate-key",
+        ]
+
+        result = subprocess.run(
+            cmd,
+            input="y\n",
+            capture_output=True,
+            text=True,
+            cwd=project_root_dir,
+        )
+
+        assert result.returncode == 0
+        assert key_path.exists()
+        assert re.search("Master key (?:.+) created", result.stdout)
+
+    def test_cli_edit(self, credentials, cli_env):
+        credentials.set("test_key", "test_value")
+
+        result = self.run_cli(["edit", "--pretend"], cli_env)
+
+        assert result.returncode == 0
+        assert "Credentials" in result.stdout or result.stderr == ""
+
+    def test_cli_show(self, credentials, cli_env):
+        credentials.set("test_key", "test_value")
+
+        result = self.run_cli(["show"], cli_env)
+        assert result.returncode == 0
+        assert "test_key: test_value" in result.stdout
+
+    def test_cli_get(self, credentials, cli_env):
+        credentials.set("api_key", "secret123")
+        credentials.set("database.password", "dbpass")
+
+        result = self.run_cli(["get", "api_key"], cli_env)
+        assert result.returncode == 0
+        assert "secret123" in result.stdout
+
+        result = self.run_cli(["get", "database.password"], cli_env)
+        assert result.returncode == 0
+        assert "dbpass" in result.stdout
+
+        result = self.run_cli(["get", "nonexistent"], cli_env)
+        assert result.returncode == 1
+        assert "not found" in result.stdout
+
+    def test_cli_set(self, credentials, cli_env):
+        result = self.run_cli(["set", "new_key", "new_value"], cli_env)
+        assert result.returncode == 0
+        assert credentials.get("new_key") == "new_value"
+
+    def test_cli_delete(self, credentials, cli_env):
+        credentials.set("delete_me", "value")
+
+        result = self.run_cli(["delete", "delete_me"], cli_env)
+        assert result.returncode == 0
+
+        credentials.config(reload=True)
+        assert credentials.get("delete_me") is None
+
+        result = self.run_cli(["delete", "nonexistent"], cli_env)
+        assert result.returncode == 1
