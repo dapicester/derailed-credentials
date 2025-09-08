@@ -58,7 +58,6 @@ class TestCLI:
 
         result = subprocess.run(
             cmd,
-            input="y\n",
             capture_output=True,
             text=True,
             cwd=project_root_dir,
@@ -67,6 +66,31 @@ class TestCLI:
         assert result.returncode == 0
         assert key_path.exists()
         assert re.search("Master key (?:.+) created", result.stdout)
+
+    def test_cli_generate_key_already_exist(
+        self, master_key, temp_dir, project_root_dir
+    ):
+        key_path = temp_dir / "master.key"
+        assert key_path.exists()
+
+        cmd = [
+            sys.executable,
+            "-m",
+            "derailed",
+            "--master-key-path",
+            str(key_path),
+            "generate-key",
+        ]
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=project_root_dir,
+        )
+
+        assert result.returncode == 1
+        assert re.search(f"Master key file {key_path} already exists", result.stdout)
 
     def test_cli_edit(self, credentials, cli_env):
         credentials.set("test_key", "test_value")

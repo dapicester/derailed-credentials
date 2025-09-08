@@ -26,7 +26,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # Generate key command
     generate_parser = subparsers.add_parser("generate-key", help="Generate master key")
-    generate_parser.add_argument("--force", help="Overwrite existing file")
+    generate_parser.add_argument(
+        "--force", help="Overwrite existing file", action="store_true"
+    )
 
     # Get command
     get_parser = subparsers.add_parser("get", help="Get a credential value")
