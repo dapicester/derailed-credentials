@@ -17,7 +17,7 @@ Homepage = "https://github.com/dapicester/derailed-credentials/"
 Repository = "https://github.com/dapicester/derailed-credentials/"
 
 [project.scripts]
-derailed = "derailed:main"
+derailed = "derailed.__main__:main"
 
 [dependency-groups]
 dev = [
