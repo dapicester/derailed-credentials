@@ -24,4 +24,4 @@ Programmatic usage:
 
     creds = Credentials()
     api_key = creds.get('api_key')
-    db_password = creds.get('database', {}).get('password')
+    db_password = creds.get('database.password')
