@@ -4,18 +4,20 @@ version = "0.1.0"
 description = "Python equivalent of Rails credentials system"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-    "cryptography>=45.0.7",
-    "pyyaml>=6.0.2",
-]
-license = { text = "MIT" }
-authors = [
-    { name = "Paolo D'Apice", email = "dapicester@gmail.com" }
-]
+license = { file = "LICENSE.txt" }
+authors = [{ name = "Paolo D'Apice", email = "dapicester@gmail.com" }]
 keywords = ["credentials", "encryption", "cli"]
+dependencies = [
+    "cryptography",
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dapicester/derailed-credentials/"
+Repository = "https://github.com/dapicester/derailed-credentials/"
 
 [project.scripts]
-derailed = "derailed.cli:main"
+derailed = "derailed:main"
 
 [dependency-groups]
 dev = [
@@ -44,5 +46,5 @@ files = [
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["derailed"]
+[tool.setuptools]
+packages = ["derailed"]

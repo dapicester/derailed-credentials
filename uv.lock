@@ -232,8 +232,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cryptography", specifier = ">=45.0.7" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "cryptography" },
+    { name = "pyyaml", specifier = ">=6.0" },
 ]
 
 [package.metadata.requires-dev]
