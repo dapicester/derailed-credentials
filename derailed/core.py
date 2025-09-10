@@ -10,6 +10,8 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
+from .serialization import yaml_dump, yaml_load
+
 
 class CredentialsError(Exception):
     """Base exception for credentials-related errors."""
@@ -154,7 +156,7 @@ class Credentials:
         if self._config_cache is None or reload is True:
             try:
                 content = self._read_encrypted_file()
-                self._config_cache = DotDict(yaml.safe_load(content) or {})
+                self._config_cache = DotDict(yaml_load(content) or {})
             except Exception as e:
                 raise CredentialsError(f"Failed to load credentials: {e}")
 
@@ -243,9 +245,7 @@ class Credentials:
         """Dump the configuration dictionary to a YAML string."""
         if not config:
             return ""
-        return yaml.dump(
-            config, default_flow_style=False, allow_unicode=True, sort_keys=False
-        )
+        return yaml_dump(config)
 
     def _save_config(self, config: Dict[str, Any]) -> None:
         """Save configuration to encrypted file."""
@@ -299,7 +299,7 @@ class Credentials:
                 return False
 
             try:
-                new_config = yaml.safe_load(new_content) or {}
+                new_config = yaml_load(new_content) or {}
                 self._save_config(new_config)
                 return True
             except yaml.YAMLError as e:
