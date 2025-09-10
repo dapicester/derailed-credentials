@@ -70,34 +70,26 @@ class TestCredentials:
         yaml_output = credentials_with_key.show()
         assert yaml_output == ""
 
-    def test_config_with_data(self, credentials_with_key):
-        test_data = {
-            "api_key": "secret123",
-            "database": {"password": "dbpass", "host": "localhost"},
-        }
+    @pytest.fixture
+    def credentials_with_data(self, credentials_with_key, sample_data):
+        credentials_with_key._save_config(sample_data)
+        return credentials_with_key
 
-        credentials_with_key._save_config(test_data)
+    def test_config_with_data(self, credentials_with_data, sample_data):
+        config = credentials_with_data.config(reload=True)
+        assert config == sample_data
 
-        config = credentials_with_key.config(reload=True)
-        assert config == test_data
+    def test_get_simple_key(self, credentials_with_data):
+        assert credentials_with_data.get("api_key") == "secret123"
+        assert credentials_with_data.get("debug") is True
+        assert credentials_with_data.get("nonexistent") is None
+        assert credentials_with_data.get("nonexistent", "default") == "default"
 
-    def test_get_simple_key(self, credentials_with_key):
-        test_data = {"api_key": "secret123", "debug": True}
-        credentials_with_key._save_config(test_data)
-
-        assert credentials_with_key.get("api_key") == "secret123"
-        assert credentials_with_key.get("debug") is True
-        assert credentials_with_key.get("nonexistent") is None
-        assert credentials_with_key.get("nonexistent", "default") == "default"
-
-    def test_get_nested_key(self, credentials_with_key):
-        test_data = {"database": {"password": "secret", "nested": {"deep": "value"}}}
-        credentials_with_key._save_config(test_data)
-
-        assert credentials_with_key.get("database.password") == "secret"
-        assert credentials_with_key.get("database.nested.deep") == "value"
-        assert credentials_with_key.get("database.nonexistent") is None
-        assert credentials_with_key.get("nonexistent.key", "default") == "default"
+    def test_get_nested_key(self, credentials_with_data):
+        assert credentials_with_data.get("database.password") == "dbpass"
+        assert credentials_with_data.get("database.nested.deep") == "value"
+        assert credentials_with_data.get("database.nonexistent") is None
+        assert credentials_with_data.get("nonexistent.key", "default") == "default"
 
     def test_set_simple_key(self, credentials_with_key):
         credentials_with_key.set("api_key", "newsecret")
@@ -128,13 +120,10 @@ class TestCredentials:
         assert credentials_with_key.delete("nonexistent") is False
         assert credentials_with_key.delete("nested.nonexistent") is False
 
-    def test_show(self, credentials_with_key):
-        test_data = {"api_key": "secret123", "database": {"password": "dbpass"}}
-        credentials_with_key._save_config(test_data)
-
-        yaml_output = credentials_with_key.show()
+    def test_show(self, credentials_with_data, sample_data):
+        yaml_output = credentials_with_data.show()
         parsed = yaml.safe_load(yaml_output)
-        assert parsed == test_data
+        assert parsed == sample_data
 
     def test_create_master_key_file(self, credentials, temp_dir):
         key_path = temp_dir / "master.key"

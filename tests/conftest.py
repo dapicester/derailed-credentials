@@ -40,3 +40,16 @@ def credentials(temp_dir):
 @pytest.fixture
 def credentials_with_key(master_key, credentials, temp_dir):
     return credentials
+
+
+@pytest.fixture
+def sample_data():
+    return {
+        "api_key": "secret123",
+        "database": {
+            "password": "dbpass",
+            "host": "localhost",
+            "nested": {"deep": "value"},
+        },
+        "debug": True,
+    }
