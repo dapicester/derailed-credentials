@@ -268,3 +268,16 @@ class TestCredentials:
 
         config = creds.config()
         assert config == {}
+
+    def test_dynamic_attributes(self, credentials_with_data):
+        credentials = credentials_with_data
+
+        assert credentials.api_key == "secret123"
+        assert credentials.database.password == "dbpass"
+        assert credentials.database.nested.deep == "value"
+
+        with pytest.raises(KeyError):
+            credentials.nonexistent
+
+        with pytest.raises(KeyError):
+            credentials.database.nonexistent

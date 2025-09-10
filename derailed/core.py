@@ -2,9 +2,10 @@ import base64
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Generic, TypeVar
 
 import yaml
+from addict import Dict as AddictDict
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -24,6 +25,17 @@ class MasterKeyAlreadyExists(CredentialsError):
 
 class YAMLError(CredentialsError):
     """Raised when failed to parse YAML credentials."""
+
+
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+class DotDict(AddictDict, Generic[K, V]):
+    """A dictionary whose values are gettable using attributes."""
+
+    def __missing__(self, key):
+        raise KeyError(key)
 
 
 class Credentials:
@@ -58,7 +70,7 @@ class Credentials:
         self.master_key_path = Path(master_key_path or self.DEFAULT_MASTER_KEY_PATH)
         self.master_key_env = master_key_env or self.MASTER_KEY_ENV
 
-        self._config_cache: Dict[str, Any] | None = None
+        self._config_cache: DotDict[str, Any] | None = None
 
         # Ensure config directory exists
         self.credentials_path.parent.mkdir(parents=True, exist_ok=True)
@@ -128,7 +140,7 @@ class Credentials:
         encrypted_content = self._encrypt(content)
         self.credentials_path.write_text(encrypted_content)
 
-    def config(self, reload: bool = False) -> Dict[str, Any]:
+    def config(self, reload: bool = False) -> DotDict[str, Any]:
         """
         Get the configuration dictionary.
 
@@ -142,11 +154,15 @@ class Credentials:
         if self._config_cache is None or reload is True:
             try:
                 content = self._read_encrypted_file()
-                self._config_cache = yaml.safe_load(content) or {}
+                self._config_cache = DotDict(yaml.safe_load(content) or {})
             except Exception as e:
                 raise CredentialsError(f"Failed to load credentials: {e}")
 
         return self._config_cache
+
+    def __getattr__(self, name):
+        """Delegates getting attributes from the configuration dictionary."""
+        return getattr(self.config(), name)
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -234,13 +250,15 @@ class Credentials:
     def _save_config(self, config: Dict[str, Any]) -> None:
         """Save configuration to encrypted file."""
 
+        if isinstance(config, DotDict):
+            config = config.to_dict()
         yaml_content = self.yaml_dump(config)
         self._write_encrypted_file(yaml_content)
-        self._config_cache = config
+        self._config_cache = DotDict(config)
 
     def show(self) -> str:
         """Return decrypted credentials as YAML string."""
-        return self.yaml_dump(self.config())
+        return self.yaml_dump(self.config().to_dict())
 
     @classmethod
     def open_external_editor(cls, file_name):

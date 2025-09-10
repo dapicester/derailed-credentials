@@ -23,5 +23,5 @@ Programmatic usage:
     from derailed import Credentials
 
     creds = Credentials()
-    api_key = creds.get('api_key')
-    db_password = creds.get('database.password')
+    api_key = creds.api_key
+    db_password = creds.database.password

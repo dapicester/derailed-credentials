@@ -8,6 +8,7 @@ license = { file = "LICENSE.txt" }
 authors = [{ name = "Paolo D'Apice", email = "dapicester@gmail.com" }]
 keywords = ["credentials", "encryption", "cli"]
 dependencies = [
+    "addict>=2.4.0",
     "cryptography",
     "pyyaml>=6.0",
 ]
@@ -41,6 +42,10 @@ dev = [
 files = [
     "derailed/"
 ]
+
+[[tool.mypy.overrides]]
+module = ["addict.*"]
+follow_untyped_imports = true
 
 [build-system]
 requires = ["setuptools>=61.0"]
