@@ -30,20 +30,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--force", help="Overwrite existing file", action="store_true"
     )
 
-    # Get command
-    get_parser = subparsers.add_parser("get", help="Get a credential value")
-    get_parser.add_argument("key", help="Key to retrieve")
-    get_parser.add_argument("--default", help="Default value if key not found")
-
-    # Set command
-    set_parser = subparsers.add_parser("set", help="Set a credential value")
-    set_parser.add_argument("key", help="Key to set")
-    set_parser.add_argument("value", help="Value to set")
-
-    # Delete command
-    del_parser = subparsers.add_parser("delete", help="Delete a credential")
-    del_parser.add_argument("key", help="Key to delete")
-
     return parser
 
 
@@ -91,25 +77,6 @@ def main():
 
         elif args.command == "show":
             print(credentials.show())
-
-        elif args.command == "get":
-            value = credentials.get(args.key, args.default)
-            if value is not args.default:
-                print(value)
-            else:
-                print(f"Key '{args.key}' not found")
-                sys.exit(1)
-
-        elif args.command == "set":
-            credentials.set(args.key, args.value)
-            print(f"Set {args.key}")
-
-        elif args.command == "delete":
-            if credentials.delete(args.key):
-                print(f"Deleted {args.key}")
-            else:
-                print(f"Key '{args.key}' not found")
-                sys.exit(1)
 
     except CredentialsError as e:
         print(f"Error: {e}", file=sys.stderr)

@@ -92,50 +92,22 @@ class TestCLI:
         assert result.returncode == 1
         assert re.search(f"Master key file {key_path} already exists", result.stdout)
 
-    def test_cli_edit(self, credentials, cli_env):
-        credentials.set("test_key", "test_value")
+    @pytest.fixture
+    def credentials_with_data(self, cli_env):
+        credentials = Credentials(
+            credentials_path=str(cli_env["creds_path"]),
+            master_key_path=str(cli_env["key_path"]),
+            master_key_env=cli_env["master_key"],
+        )
+        credentials._save_config({"test_key": "test_value"})
+        return credentials
 
+    def test_cli_edit(self, credentials_with_data, cli_env):
         result = self.run_cli(["edit", "--pretend"], cli_env)
-
         assert result.returncode == 0
         assert "Credentials" in result.stdout or result.stderr == ""
 
-    def test_cli_show(self, credentials, cli_env):
-        credentials.set("test_key", "test_value")
-
+    def test_cli_show(self, credentials_with_data, cli_env):
         result = self.run_cli(["show"], cli_env)
         assert result.returncode == 0
         assert "test_key: test_value" in result.stdout
-
-    def test_cli_get(self, credentials, cli_env):
-        credentials.set("api_key", "secret123")
-        credentials.set("database.password", "dbpass")
-
-        result = self.run_cli(["get", "api_key"], cli_env)
-        assert result.returncode == 0
-        assert "secret123" in result.stdout
-
-        result = self.run_cli(["get", "database.password"], cli_env)
-        assert result.returncode == 0
-        assert "dbpass" in result.stdout
-
-        result = self.run_cli(["get", "nonexistent"], cli_env)
-        assert result.returncode == 1
-        assert "not found" in result.stdout
-
-    def test_cli_set(self, credentials, cli_env):
-        result = self.run_cli(["set", "new_key", "new_value"], cli_env)
-        assert result.returncode == 0
-        assert credentials.get("new_key") == "new_value"
-
-    def test_cli_delete(self, credentials, cli_env):
-        credentials.set("delete_me", "value")
-
-        result = self.run_cli(["delete", "delete_me"], cli_env)
-        assert result.returncode == 0
-
-        credentials.config(reload=True)
-        assert credentials.get("delete_me") is None
-
-        result = self.run_cli(["delete", "nonexistent"], cli_env)
-        assert result.returncode == 1

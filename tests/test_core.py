@@ -80,45 +80,16 @@ class TestCredentials:
         assert config == sample_data
 
     def test_get_simple_key(self, credentials_with_data):
-        assert credentials_with_data.get("api_key") == "secret123"
-        assert credentials_with_data.get("debug") is True
-        assert credentials_with_data.get("nonexistent") is None
-        assert credentials_with_data.get("nonexistent", "default") == "default"
+        assert credentials_with_data.api_key == "secret123"
+        assert credentials_with_data.debug is True
+        with pytest.raises(KeyError):
+            credentials_with_data.nonexistent
 
     def test_get_nested_key(self, credentials_with_data):
-        assert credentials_with_data.get("database.password") == "dbpass"
-        assert credentials_with_data.get("database.nested.deep") == "value"
-        assert credentials_with_data.get("database.nonexistent") is None
-        assert credentials_with_data.get("nonexistent.key", "default") == "default"
-
-    def test_set_simple_key(self, credentials_with_key):
-        credentials_with_key.set("api_key", "newsecret")
-        assert credentials_with_key.get("api_key") == "newsecret"
-
-    def test_set_nested_key(self, credentials_with_key):
-        credentials_with_key.set("database.password", "newpass")
-        credentials_with_key.set("new.nested.key", "value")
-
-        assert credentials_with_key.get("database.password") == "newpass"
-        assert credentials_with_key.get("new.nested.key") == "value"
-
-    def test_delete_simple_key(self, credentials_with_key):
-        credentials_with_key.set("temp_key", "temp_value")
-        assert credentials_with_key.get("temp_key") == "temp_value"
-
-        assert credentials_with_key.delete("temp_key") is True
-        assert credentials_with_key.get("temp_key") is None
-
-    def test_delete_nested_key(self, credentials_with_key):
-        credentials_with_key.set("database.temp", "temp_value")
-        assert credentials_with_key.get("database.temp") == "temp_value"
-
-        assert credentials_with_key.delete("database.temp") is True
-        assert credentials_with_key.get("database.temp") is None
-
-    def test_delete_nonexistent_key(self, credentials_with_key):
-        assert credentials_with_key.delete("nonexistent") is False
-        assert credentials_with_key.delete("nested.nonexistent") is False
+        assert credentials_with_data.database.password == "dbpass"
+        assert credentials_with_data.database.nested.deep == "value"
+        with pytest.raises(KeyError):
+            credentials_with_data.database.nonexistent
 
     def test_show(self, credentials_with_data, sample_data):
         yaml_output = credentials_with_data.show()
