@@ -23,6 +23,8 @@ def yaml_load(string: str) -> Any:
 
 def yaml_dump(data: Any) -> str:
     """Dump data into a YAML string."""
+    if not data:
+        return ""
     return yaml.dump(
         data, allow_unicode=True, default_flow_style=False, sort_keys=False
     )

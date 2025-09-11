@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Generic, TypeVar
 
-import yaml
 from addict import Dict as AddictDict
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
@@ -23,10 +22,6 @@ class MasterKeyMissing(CredentialsError):
 
 class MasterKeyAlreadyExists(CredentialsError):
     """Raised when generating a master key and a master key is found."""
-
-
-class YAMLError(CredentialsError):
-    """Raised when failed to parse YAML credentials."""
 
 
 K = TypeVar("K")
@@ -166,25 +161,16 @@ class Credentials:
         """Delegates getting attributes from the configuration dictionary."""
         return getattr(self.config(), name)
 
-    @classmethod
-    def yaml_dump(cls, config: Dict[str, Any]) -> str:
-        """Dump the configuration dictionary to a YAML string."""
-        if not config:
-            return ""
-        return yaml_dump(config)
-
     def _save_config(self, config: Dict[str, Any]) -> None:
         """Save configuration to encrypted file."""
 
-        if isinstance(config, DotDict):
-            config = config.to_dict()
-        yaml_content = self.yaml_dump(config)
+        yaml_content = yaml_dump(config)
         self._write_encrypted_file(yaml_content)
         self._config_cache = DotDict(config)
 
     def show(self) -> str:
         """Return decrypted credentials as YAML string."""
-        return self.yaml_dump(self.config().to_dict())
+        return yaml_dump(self.config().to_dict())
 
     @classmethod
     def open_external_editor(cls, file_name):
@@ -224,12 +210,9 @@ class Credentials:
             if new_content == current_content:
                 return False
 
-            try:
-                new_config = yaml_load(new_content) or {}
-                self._save_config(new_config)
-                return True
-            except yaml.YAMLError as e:
-                raise YAMLError(f"YAML parsing error: {e}") from e
+            new_config = yaml_load(new_content) or {}
+            self._save_config(new_config)
+            return True
 
     @classmethod
     def generate_master_key(cls) -> str:
