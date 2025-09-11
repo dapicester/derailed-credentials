@@ -46,13 +46,12 @@ class Credentials:
     DEFAULT_CREDENTIALS_PATH = "config/credentials.yml.enc"
     DEFAULT_MASTER_KEY_PATH = "config/master.key"
     MASTER_KEY_ENV = "MASTER_KEY"
-    SALT = b"credentials_salt"  # TODO: make this configurable
+    SALT = b"credentials_salt"
 
     def __init__(
         self,
         credentials_path: str | None = None,
         master_key_path: str | None = None,
-        master_key_env: str | None = None,
     ):
         """
         Initialize credentials manager.
@@ -60,12 +59,10 @@ class Credentials:
         Args:
             credentials_path: Path to encrypted credentials file
             master_key_path: Path to master key file
-            master_key_env: Environment variable name for master key
         """
 
         self.credentials_path = Path(credentials_path or self.DEFAULT_CREDENTIALS_PATH)
         self.master_key_path = Path(master_key_path or self.DEFAULT_MASTER_KEY_PATH)
-        self.master_key_env = master_key_env or self.MASTER_KEY_ENV
 
         self._config_cache: DotDict[str, Any] | None = None
 
@@ -76,7 +73,7 @@ class Credentials:
         """Get master key from environment variable or file."""
 
         # Try environment variable first
-        key = os.environ.get(self.master_key_env)
+        key = os.environ.get(self.MASTER_KEY_ENV)
         if key:
             return key.strip()
 
@@ -85,7 +82,7 @@ class Credentials:
             return self.master_key_path.read_text().strip()
 
         raise MasterKeyMissing(
-            f"Master key not found. Set {self.master_key_env} environment variable "
+            f"Master key not found. Set {self.MASTER_KEY_ENV} environment variable "
             f"or create {self.master_key_path}"
         )
 

@@ -28,7 +28,7 @@ class TestCredentials:
     def test_master_key_from_env(self, credentials):
         test_key = "test-master-key-123"
 
-        with patch.dict(os.environ, {"TEST_MASTER_KEY": test_key}):
+        with patch.dict(os.environ, {"MASTER_KEY": test_key}):
             assert credentials._get_master_key() == test_key
 
     def test_master_key_from_file(self, credentials, temp_dir):
@@ -47,7 +47,7 @@ class TestCredentials:
         key_path = temp_dir / "master.key"
         key_path.write_text(file_key)
 
-        with patch.dict(os.environ, {"TEST_MASTER_KEY": env_key}):
+        with patch.dict(os.environ, {"MASTER_KEY": env_key}):
             assert credentials._get_master_key() == env_key
 
     def test_master_key_missing(self, credentials):

@@ -97,7 +97,6 @@ class TestCLI:
         credentials = Credentials(
             credentials_path=str(cli_env["creds_path"]),
             master_key_path=str(cli_env["key_path"]),
-            master_key_env=cli_env["master_key"],
         )
         credentials._save_config({"test_key": "test_value"})
         return credentials

@@ -10,7 +10,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--credentials-path", help="Path to credentials file")
     parser.add_argument("--master-key-path", help="Path to master key file")
-    parser.add_argument("--master-key-env", help="Environment variable for master key")
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -46,7 +45,6 @@ def main():
         credentials = Credentials(
             credentials_path=args.credentials_path,
             master_key_path=args.master_key_path,
-            master_key_env=args.master_key_env,
         )
 
         if args.command == "generate-key":

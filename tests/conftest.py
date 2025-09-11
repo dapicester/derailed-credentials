@@ -33,7 +33,6 @@ def credentials(temp_dir):
     return Credentials(
         credentials_path=str(creds_path),
         master_key_path=str(key_path),
-        master_key_env="TEST_MASTER_KEY",
     )
 
 
