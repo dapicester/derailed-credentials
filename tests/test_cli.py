@@ -1,10 +1,12 @@
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
 from derailed.core import Credentials
+from derailed.diffing import GITATTRIBUTES_ENTRY
 
 
 class TestCLI:
@@ -110,3 +112,82 @@ class TestCLI:
         result = self.run_cli(["show"], cli_env)
         assert result.returncode == 0
         assert "test_key: test_value" in result.stdout
+
+    def test_cli_diff_nothing(self, credentials_with_data, cli_env):
+        result = self.run_cli(["diff"], cli_env)
+        assert result.returncode == 0
+        assert result.stdout == ""
+
+    def test_cli_diff_show(self, credentials_with_data, cli_env):
+        result = self.run_cli(["diff", cli_env["creds_path"]], cli_env)
+        assert result.returncode == 0
+        assert "test_key: test_value" in result.stdout
+
+    @pytest.fixture
+    def gitattributes(self, cli_env, request):
+        gitattributes = Path(cli_env["cwd"]) / ".gitattributes"
+        request.addfinalizer(lambda: gitattributes.unlink(missing_ok=True))
+        return gitattributes
+
+    @pytest.fixture
+    def gitattributes_with_content(self, gitattributes):
+        sample_content = "* text=auto\n"
+        gitattributes.write_text(sample_content)
+        return gitattributes, sample_content
+
+    def test_cli_diff_enroll(self, gitattributes, cli_env):
+        assert not gitattributes.exists()
+
+        result = self.run_cli(["diff", "--enroll"], cli_env)
+        assert result.returncode == 0
+        assert "Enrolled project in credentials file diffing!" in result.stdout
+        assert gitattributes.read_text() == GITATTRIBUTES_ENTRY
+
+    def test_cli_diff_enroll_append(self, gitattributes_with_content, cli_env):
+        gitattributes, sample_content = gitattributes_with_content
+
+        result = self.run_cli(["diff", "--enroll"], cli_env)
+        assert "Enrolled project in credentials file diffing!" in result.stdout
+        assert gitattributes.read_text() == f"{sample_content}{GITATTRIBUTES_ENTRY}"
+
+    @pytest.fixture
+    def gitattributes_enrolled(self, gitattributes):
+        gitattributes.write_text(GITATTRIBUTES_ENTRY)
+        return gitattributes
+
+    def test_cli_diff_enroll_already_enrolled(self, gitattributes_enrolled, cli_env):
+        result = self.run_cli(["diff", "--enroll"], cli_env)
+        assert result.returncode == 0
+        assert (
+            "Project is already enrolled in credentials file diffing" in result.stdout
+        )
+
+    def test_cli_diff_disenroll(self, gitattributes_enrolled, cli_env):
+        result = self.run_cli(["diff", "--disenroll"], cli_env)
+        assert result.returncode == 0
+        assert "Disenrolled project from credentials file diffing" in result.stdout
+
+    def test_cli_diff_disenroll_not_enrolled(self, gitattributes, cli_env):
+        result = self.run_cli(["diff", "--disenroll"], cli_env)
+        assert result.returncode == 0
+        assert "Project is not enrolled in credentials file diffing" in result.stdout
+
+    @pytest.fixture
+    def git_config(self, cli_env, request):
+        git_config = Path(cli_env["cwd"]) / ".git" / "config"
+        request.addfinalizer(
+            lambda: subprocess.check_call(
+                ["git", "config", "unset", "diff.derailed_credentials.textconv"]
+            )
+        )
+        return git_config
+
+    def test_cli_edit_configure_diff_driver(
+        self, gitattributes_enrolled, git_config, credentials_with_data, cli_env
+    ):
+        assert '[diff "derailed_credentials"]' not in git_config.read_text()
+
+        with self.editor_write("secret: password"):
+            result = self.run_cli(["edit"], cli_env)
+        assert result.returncode == 0
+        assert '[diff "derailed_credentials"]' in git_config.read_text()

@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from .core import Credentials, CredentialsError, MasterKeyAlreadyExists
+from .diffing import Diffing
 
 
 class Cli:
@@ -9,6 +10,7 @@ class Cli:
 
     def __init__(self):
         self.parser = self.build_parser()
+        self.diffing = Diffing()
 
     def build_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
@@ -28,6 +30,22 @@ class Cli:
 
         # Show command
         subparsers.add_parser("show", help="Show decrypted credentials")
+
+        # Diff command
+        diff_parser = subparsers.add_parser(
+            "diff", help="Enroll/disenroll in decrypted diffs of credentials using git"
+        )
+        diff_parser.add_argument(
+            "--enroll",
+            help="Enroll project in credentials file diffing with `git diff`",
+            action="store_true",
+        )
+        diff_parser.add_argument(
+            "--disenroll",
+            help="Disenroll project in credentials file diffing",
+            action="store_true",
+        )
+        diff_parser.add_argument("content_path", nargs="?")
 
         # Generate key command
         generate_parser = subparsers.add_parser(
@@ -66,11 +84,22 @@ class Cli:
 
     def edit(self, args: argparse.Namespace) -> None:
         credentials = self.get_credentials(args.credentials_path, args.master_key_path)
+        if not args.pretend:
+            self.diffing.ensure_diffing_driver_is_configured()
 
         if credentials.edit(args.editor, args.pretend) is True:
             print("Credentials updated successfully.")
         else:
             print("No changes made.")
+
+    def diff(self, args: argparse.Namespace) -> None:
+        if args.content_path:
+            credentials = self.get_credentials(args.content_path, args.master_key_path)
+            print(credentials.show())
+        elif args.enroll:
+            self.diffing.enroll_project_in_credentials_diffing()
+        elif args.disenroll:
+            self.diffing.disenroll_project_from_credentials_diffing()
 
     def show(self, args: argparse.Namespace) -> None:
         credentials = self.get_credentials(args.credentials_path, args.master_key_path)
@@ -88,6 +117,8 @@ class Cli:
                 self.generate_key(args)
             elif args.command == "edit":
                 self.edit(args)
+            elif args.command == "diff":
+                self.diff(args)
             elif args.command == "show":
                 self.show(args)
         except CredentialsError as e:
