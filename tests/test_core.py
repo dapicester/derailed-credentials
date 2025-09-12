@@ -1,6 +1,6 @@
 import base64
 import os
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -12,8 +12,10 @@ from derailed.core import (
     MasterKeyMissing,
 )
 
+from .base import EditorMixin
 
-class TestCredentials:
+
+class TestCredentials(EditorMixin):
     def test_generate_master_key(self):
         key1 = Credentials.generate_master_key()
         key2 = Credentials.generate_master_key()
@@ -117,43 +119,25 @@ class TestCredentials:
         with pytest.raises(MasterKeyAlreadyExists):
             credentials.create_master_key_file()
 
-    @patch("tempfile.NamedTemporaryFile")
-    def test_edit_success(self, mock_tempfile, fp, credentials_with_key, temp_dir):
-        mock_file = MagicMock()
-        mock_file.name = "/tmp/test.yml"
-        mock_tempfile.return_value.__enter__.return_value = mock_file
-
+    def test_edit_success(self, credentials_with_key, temp_dir):
         # Mock file operations
         original_content = "api_key: old_value\n"
         new_content = "api_key: new_value\ndatabase:\n  password: secret\n"
 
-        with patch.dict(os.environ, {}, clear=True):
-            # No EDITOR set, defaults to nano
-            fp.register(["nano", mock_file.name])
+        with self.editor_write(new_content):
+            with patch.object(
+                credentials_with_key, "show", return_value=original_content
+            ):
+                changed = credentials_with_key.edit(editor="nano")
+                assert changed is True
 
-            with patch("builtins.open", mock_open(read_data=new_content)):
-                with patch.object(
-                    credentials_with_key, "show", return_value=original_content
-                ):
-                    changed = credentials_with_key.edit(editor="nano")
-                    assert changed is True
-
-    @patch("tempfile.NamedTemporaryFile")
-    def test_edit_no_changes(self, mock_tempfile, fp, credentials_with_key):
-        mock_file = MagicMock()
-        mock_file.name = "/tmp/test.yml"
-        mock_tempfile.return_value.__enter__.return_value = mock_file
-
+    def test_edit_no_changes(self, credentials_with_key):
         content = "api_key: value\n"
 
-        with patch.dict(os.environ, {"EDITOR": "/usr/bin/nvim"}):
-            # Use EDITOR
-            fp.register(["/usr/bin/nvim", mock_file.name])
-
-            with patch("builtins.open", mock_open(read_data=content)):
-                with patch.object(credentials_with_key, "show", return_value=content):
-                    changed = credentials_with_key.edit()
-                    assert changed is False
+        with self.editor_write(content):
+            with patch.object(credentials_with_key, "show", return_value=content):
+                changed = credentials_with_key.edit()
+                assert changed is False
 
     def test_invalid_encryption_key(self, credentials, temp_dir):
         # Create credentials with one key

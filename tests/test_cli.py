@@ -8,8 +8,10 @@ import pytest
 from derailed.core import Credentials
 from derailed.diffing import GITATTRIBUTES_ENTRY
 
+from .base import EditorMixin
 
-class TestCLI:
+
+class TestCLI(EditorMixin):
     @pytest.fixture
     def cli_env(self, temp_dir, project_root_dir):
         # TODO: DRY
@@ -88,10 +90,23 @@ class TestCLI:
             cmd,
             capture_output=True,
             text=True,
+            input="n",
             cwd=project_root_dir,
         )
 
         assert result.returncode == 1
+        assert re.search(f"Master key file {key_path} already exists", result.stdout)
+        assert "Aborted" in result.stdout
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            input="y",
+            cwd=project_root_dir,
+        )
+
+        assert result.returncode == 0
         assert re.search(f"Master key file {key_path} already exists", result.stdout)
 
     @pytest.fixture
@@ -104,7 +119,8 @@ class TestCLI:
         return credentials
 
     def test_cli_edit(self, credentials_with_data, cli_env):
-        result = self.run_cli(["edit", "--pretend"], cli_env)
+        with self.editor_write("secret: password"):
+            result = self.run_cli(["edit"], cli_env)
         assert result.returncode == 0
         assert "Credentials" in result.stdout or result.stderr == ""
 

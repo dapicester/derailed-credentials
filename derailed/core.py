@@ -1,5 +1,6 @@
 import base64
 import os
+import shlex
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Generic, TypeVar
@@ -174,9 +175,10 @@ class Credentials:
         import subprocess
 
         editor = os.environ.get("EDITOR", "nano")
-        subprocess.run([editor, file_name], check=True)
+        cmd = shlex.split(editor) + [file_name]
+        subprocess.run(cmd, check=True)
 
-    def edit(self, editor: str | None = None, fake: bool = False) -> bool:
+    def edit(self, editor: str | None = None) -> bool:
         """
         Edit credentials in an external editor.
 
@@ -196,8 +198,7 @@ class Credentials:
             tmp_file.flush()
 
             # Open editor, unless we are running tests
-            if not fake:
-                self.open_external_editor(tmp_file.name)
+            self.open_external_editor(tmp_file.name)
 
             # Read back the content
             with open(tmp_file.name, "r") as f:

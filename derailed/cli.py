@@ -24,9 +24,6 @@ class Cli:
         # Edit command
         edit_parser = subparsers.add_parser("edit", help="Edit credentials")
         edit_parser.add_argument("--editor", help="Editor to use")
-        edit_parser.add_argument(
-            "--pretend", help="Do not actually edit the file", action="store_true"
-        )
 
         # Show command
         subparsers.add_parser("show", help="Show decrypted credentials")
@@ -84,10 +81,9 @@ class Cli:
 
     def edit(self, args: argparse.Namespace) -> None:
         credentials = self.get_credentials(args.credentials_path, args.master_key_path)
-        if not args.pretend:
-            self.diffing.ensure_diffing_driver_is_configured()
+        self.diffing.ensure_diffing_driver_is_configured()
 
-        if credentials.edit(args.editor, args.pretend) is True:
+        if credentials.edit(args.editor) is True:
             print("Credentials updated successfully.")
         else:
             print("No changes made.")
