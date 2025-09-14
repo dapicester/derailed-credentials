@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0] - UNRELEASED
+## [0.3.0] - 2025/09/14
 
 - Remove configuring environment variable name.
 - Add `diff` command and helpers for configuring the diffing driver.
