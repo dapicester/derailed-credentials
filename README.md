@@ -1,5 +1,7 @@
 # Derailed Credentials
 
+[![codecov](https://codecov.io/gh/dapicester/derailed-credentials/graph/badge.svg?token=SL8S6G7S4N)](https://codecov.io/gh/dapicester/derailed-credentials)
+
 Missing a tool like `rails credentials:edit` for your Python projects?
 
 **Derailed Credentials** brings encrypted secret management to Python,
