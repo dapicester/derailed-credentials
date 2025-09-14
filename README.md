@@ -28,6 +28,7 @@ As a standalone command-line tool:
     derailed generate-key            # Generate new master key
     derailed edit                    # Edit credentials file
     derailed show                    # Show decrypted credentials
+    derailed fetch path              # Fetch a value
 
 Programmatic usage:
 
