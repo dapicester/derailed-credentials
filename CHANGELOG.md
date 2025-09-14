@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.1] - 2025/09/14
+
+- Fix project script
+- Fix error on fetch
+
 ## [0.3.0] - 2025/09/14
 
 - Remove configuring environment variable name.
