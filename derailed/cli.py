@@ -104,7 +104,7 @@ class Cli:
             value = reduce(lambda doc, key: doc[key], args.path.split("."), data)
             print(str(value))
             return
-        except KeyError:
+        except (KeyError, TypeError):
             print("Invalid or missing credentials path:", args.path)
             sys.exit(1)
 

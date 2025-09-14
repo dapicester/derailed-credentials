@@ -149,6 +149,12 @@ class TestCLI(EditorMixin):
         assert result.returncode == 0
         assert result.stdout.rstrip() == "value"
 
+    @pytest.mark.sample_data({"some": {"nested": "value"}})
+    def test_cli_fetch_error(self, credentials_with_data, cli_env):
+        result = self.run_cli(["fetch", "some.nested.deep.value"], cli_env)
+        assert result.returncode == 1
+        assert "Invalid or missing credentials path", result.stdout
+
     def test_cli_diff_nothing(self, credentials_with_data, cli_env):
         result = self.run_cli(["diff"], cli_env)
         assert result.returncode == 0
