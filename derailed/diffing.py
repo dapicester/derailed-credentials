@@ -61,6 +61,6 @@ class Diffing:
 
     def configure_diffing_driver(self) -> None:
         subprocess.check_call(
-            ["git", "config", "diff.derailed_credentials.textconv", "'derailed diff'"]
+            ["git", "config", "diff.derailed_credentials.textconv", "derailed diff"]
         )
         print("Configured Git diff driver for credentials.")

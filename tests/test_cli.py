@@ -227,9 +227,14 @@ class TestCLI(EditorMixin):
     def test_cli_edit_configure_diff_driver(
         self, gitattributes_enrolled, git_config, credentials_with_data, cli_env
     ):
-        assert '[diff "derailed_credentials"]' not in git_config.read_text()
+        # need to first enroll in diffing
+        result = self.run_cli(["diff", "--enroll"], cli_env)
+        assert result.returncode == 0
 
         with self.editor_write("secret: password"):
             result = self.run_cli(["edit"], cli_env)
         assert result.returncode == 0
-        assert '[diff "derailed_credentials"]' in git_config.read_text()
+
+        cfg = git_config.read_text()
+        assert '[diff "derailed_credentials"]' in cfg
+        assert "textconv = derailed diff" in cfg
