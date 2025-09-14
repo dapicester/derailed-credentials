@@ -1,5 +1,6 @@
 import argparse
 import sys
+from functools import reduce
 
 from .core import Credentials, CredentialsError, MasterKeyAlreadyExists
 from .diffing import Diffing
@@ -29,6 +30,12 @@ class Cli:
 
         # Show command
         subparsers.add_parser("show", help="Show decrypted credentials")
+
+        # Fetch command
+        fetch_parser = subparsers.add_parser(
+            "fetch", help="Fetch a value in the decrypted credentials"
+        )
+        fetch_parser.add_argument("path")
 
         # Diff command
         diff_parser = subparsers.add_parser(
@@ -89,6 +96,17 @@ class Cli:
             print("Credentials updated successfully.")
         else:
             print("No changes made.")
+
+    def fetch(self, args: argparse.Namespace) -> None:
+        credentials = self.get_credentials(args.credentials_path, args.master_key_path)
+        data = credentials.config
+        try:
+            value = reduce(lambda doc, key: doc[key], args.path.split("."), data)
+            print(str(value))
+            return
+        except KeyError:
+            print("Invalid or missing credentials path:", args.path)
+            sys.exit(1)
 
     def diff(self, args: argparse.Namespace) -> None:
         if args.content_path:

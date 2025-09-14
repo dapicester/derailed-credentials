@@ -52,3 +52,7 @@ def sample_data():
         },
         "debug": True,
     }
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "sample_data: Provide sample data")

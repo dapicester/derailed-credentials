@@ -110,12 +110,15 @@ class TestCLI(EditorMixin):
         assert re.search(f"Master key file {key_path} already exists", result.stdout)
 
     @pytest.fixture
-    def credentials_with_data(self, cli_env):
+    def credentials_with_data(self, request, cli_env):
         credentials = Credentials(
             credentials_path=str(cli_env["creds_path"]),
             master_key_path=str(cli_env["key_path"]),
         )
-        credentials.config = {"test_key": "test_value"}
+        data = {"test_key": "test_value"}
+        if marker := request.node.get_closest_marker("sample_data"):
+            data = data | marker.args[0]
+        credentials.config = data
         return credentials
 
     def test_cli_edit(self, credentials_with_data, cli_env):
@@ -134,6 +137,17 @@ class TestCLI(EditorMixin):
         result = self.run_cli(["show"], cli_env)
         assert result.returncode == 0
         assert "test_key: test_value" in result.stdout
+
+    def test_cli_fetch(self, credentials_with_data, cli_env):
+        result = self.run_cli(["fetch", "test_key"], cli_env)
+        assert result.returncode == 0
+        assert result.stdout.rstrip() == "test_value"
+
+    @pytest.mark.sample_data({"some": {"nested": "value"}})
+    def test_cli_fetch_nested(self, credentials_with_data, cli_env):
+        result = self.run_cli(["fetch", "some.nested"], cli_env)
+        assert result.returncode == 0
+        assert result.stdout.rstrip() == "value"
 
     def test_cli_diff_nothing(self, credentials_with_data, cli_env):
         result = self.run_cli(["diff"], cli_env)
