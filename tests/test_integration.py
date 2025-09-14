@@ -39,8 +39,8 @@ class TestCredentialsIntegration:
         )
 
         # Set different values
-        prod_creds._save_config({"database.password": "prod-password"})
-        staging_creds._save_config({"database.password": "staging-password"})
+        prod_creds.config = {"database.password": "prod-password"}
+        staging_creds.config = {"database.password": "staging-password"}
 
         assert prod_creds.get("database.password") == "prod-password"
         assert staging_creds.get("database.password") == "staging-password"

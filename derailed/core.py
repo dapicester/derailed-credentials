@@ -70,7 +70,8 @@ class Credentials:
         # Ensure config directory exists
         self.credentials_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def _get_master_key(self) -> str:
+    @property
+    def master_key(self) -> str:
         """Get master key from environment variable or file."""
 
         # Try environment variable first
@@ -87,35 +88,27 @@ class Credentials:
             f"or create {self.master_key_path}"
         )
 
-    def _derive_key(self, master_key: str) -> bytes:
-        """Derive encryption key from master key using PBKDF2."""
+    @property
+    def _cipher(self) -> Fernet:
+        """Get Fernet cipher instance."""
 
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(), length=32, salt=self.SALT, iterations=100000
         )
-        key = base64.urlsafe_b64encode(kdf.derive(master_key.encode()))
-        return key
-
-    def _get_cipher(self) -> Fernet:
-        """Get Fernet cipher instance."""
-
-        master_key = self._get_master_key()
-        derived_key = self._derive_key(master_key)
-        return Fernet(derived_key)
+        key = base64.urlsafe_b64encode(kdf.derive(self.master_key.encode()))
+        return Fernet(key)
 
     def _encrypt(self, data: str) -> str:
         """Encrypt data and return base64 encoded string."""
 
-        cipher = self._get_cipher()
-        encrypted = cipher.encrypt(data.encode())
+        encrypted = self._cipher.encrypt(data.encode())
         return base64.b64encode(encrypted).decode()
 
     def _decrypt(self, encrypted_data: str) -> str:
         """Decrypt base64 encoded encrypted data."""
 
-        cipher = self._get_cipher()
         encrypted_bytes = base64.b64decode(encrypted_data.encode())
-        return cipher.decrypt(encrypted_bytes).decode()
+        return self._cipher.decrypt(encrypted_bytes).decode()
 
     def _read_encrypted_file(self) -> str:
         """Read and decrypt credentials file."""
@@ -135,7 +128,8 @@ class Credentials:
         encrypted_content = self._encrypt(content)
         self.credentials_path.write_text(encrypted_content)
 
-    def config(self, reload: bool = False) -> DotDict[str, Any]:
+    @property
+    def config(self) -> DotDict[str, Any]:
         """
         Get the configuration dictionary.
 
@@ -146,7 +140,7 @@ class Credentials:
             Dictionary containing all credentials
         """
 
-        if self._config_cache is None or reload is True:
+        if self._config_cache is None:
             try:
                 content = self._read_encrypted_file()
                 self._config_cache = DotDict(yaml_load(content) or {})
@@ -155,20 +149,21 @@ class Credentials:
 
         return self._config_cache
 
-    def __getattr__(self, name):
-        """Delegates getting attributes from the configuration dictionary."""
-        return getattr(self.config(), name)
-
-    def _save_config(self, config: Dict[str, Any]) -> None:
+    @config.setter
+    def config(self, config: Dict[str, Any]) -> None:
         """Save configuration to encrypted file."""
 
         yaml_content = yaml_dump(config)
         self._write_encrypted_file(yaml_content)
         self._config_cache = DotDict(config)
 
+    def __getattr__(self, name):
+        """Delegates getting attributes from the configuration dictionary."""
+        return getattr(self.config, name)
+
     def show(self) -> str:
         """Return decrypted credentials as YAML string."""
-        return yaml_dump(self.config().to_dict())
+        return yaml_dump(self.config.to_dict())
 
     @classmethod
     def open_external_editor(cls, file_name):
@@ -178,12 +173,9 @@ class Credentials:
         cmd = shlex.split(editor) + [file_name]
         subprocess.run(cmd, check=True)
 
-    def edit(self, editor: str | None = None) -> bool:
+    def edit(self) -> bool:
         """
         Edit credentials in an external editor.
-
-        Args:
-            editor: Editor command to use (defaults to $EDITOR or 'nano')
 
         Returns:
             True if the credentials have been changed, False otherwise
@@ -209,7 +201,7 @@ class Credentials:
                 return False
 
             new_config = yaml_load(new_content) or {}
-            self._save_config(new_config)
+            self.config = new_config
             return True
 
     @classmethod

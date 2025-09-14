@@ -115,14 +115,20 @@ class TestCLI(EditorMixin):
             credentials_path=str(cli_env["creds_path"]),
             master_key_path=str(cli_env["key_path"]),
         )
-        credentials._save_config({"test_key": "test_value"})
+        credentials.config = {"test_key": "test_value"}
         return credentials
 
     def test_cli_edit(self, credentials_with_data, cli_env):
         with self.editor_write("secret: password"):
             result = self.run_cli(["edit"], cli_env)
         assert result.returncode == 0
-        assert "Credentials" in result.stdout or result.stderr == ""
+        assert "Credentials updated successfully" in result.stdout
+
+    def test_cli_edit_no_changes(self, credentials_with_data, cli_env):
+        with self.editor_write(credentials_with_data.show()):
+            result = self.run_cli(["edit"], cli_env)
+        assert result.returncode == 0
+        assert "No changes made" in result.stdout
 
     def test_cli_show(self, credentials_with_data, cli_env):
         result = self.run_cli(["show"], cli_env)

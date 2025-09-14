@@ -31,7 +31,7 @@ class TestCredentials(EditorMixin):
         test_key = "test-master-key-123"
 
         with patch.dict(os.environ, {"MASTER_KEY": test_key}):
-            assert credentials._get_master_key() == test_key
+            assert credentials.master_key == test_key
 
     def test_master_key_from_file(self, credentials, temp_dir):
         test_key = "test-master-key-from-file"
@@ -40,7 +40,7 @@ class TestCredentials(EditorMixin):
         key_path.write_text(test_key + "\n")
 
         # Strips the newline character from the file
-        assert credentials._get_master_key() == test_key
+        assert credentials.master_key == test_key
 
     def test_master_key_env_priority(self, credentials, temp_dir):
         env_key = "env-key"
@@ -50,11 +50,11 @@ class TestCredentials(EditorMixin):
         key_path.write_text(file_key)
 
         with patch.dict(os.environ, {"MASTER_KEY": env_key}):
-            assert credentials._get_master_key() == env_key
+            assert credentials.master_key == env_key
 
     def test_master_key_missing(self, credentials):
         with pytest.raises(MasterKeyMissing):
-            credentials._get_master_key()
+            credentials.master_key
 
     def test_encrypt_decrypt_roundtrip(self, credentials_with_key):
         original_data = "This is secret data! 🔐"
@@ -66,20 +66,18 @@ class TestCredentials(EditorMixin):
         assert encrypted != original_data
 
     def test_config_empty_file(self, credentials_with_key):
-        config = credentials_with_key.config()
-        assert config == {}
+        assert credentials_with_key.config == {}
 
         yaml_output = credentials_with_key.show()
         assert yaml_output == ""
 
     @pytest.fixture
     def credentials_with_data(self, credentials_with_key, sample_data):
-        credentials_with_key._save_config(sample_data)
+        credentials_with_key.config = sample_data
         return credentials_with_key
 
     def test_config_with_data(self, credentials_with_data, sample_data):
-        config = credentials_with_data.config(reload=True)
-        assert config == sample_data
+        assert credentials_with_data.config == sample_data
 
     def test_get_simple_key(self, credentials_with_data):
         assert credentials_with_data.api_key == "secret123"
@@ -128,7 +126,7 @@ class TestCredentials(EditorMixin):
             with patch.object(
                 credentials_with_key, "show", return_value=original_content
             ):
-                changed = credentials_with_key.edit(editor="nano")
+                changed = credentials_with_key.edit()
                 assert changed is True
 
     def test_edit_no_changes(self, credentials_with_key):
@@ -146,15 +144,16 @@ class TestCredentials(EditorMixin):
         key_path.write_text(key1)
 
         # Save some data
-        credentials._save_config({"test": "data"})
+        credentials.config = {"test": "data"}
 
         # Change the key
         key2 = Credentials.generate_master_key()
         key_path.write_text(key2)
 
         # Should raise error when trying to decrypt
+        credentials._config_cache = None
         with pytest.raises(CredentialsError):
-            credentials.config(reload=True)
+            credentials.config
 
     def test_corrupted_encrypted_file(self, temp_dir):
         creds_path = temp_dir / "credentials.yml.enc"
@@ -172,7 +171,7 @@ class TestCredentials(EditorMixin):
         )
 
         with pytest.raises(CredentialsError):
-            creds.config()
+            creds.config
 
     def test_invalid_yaml_in_decrypted_content(self, temp_dir):
         creds_path = temp_dir / "credentials.yml.enc"
@@ -191,7 +190,7 @@ class TestCredentials(EditorMixin):
         creds_path.write_text(encrypted)
 
         with pytest.raises(CredentialsError):
-            creds.config()
+            creds.config
 
     def test_permission_denied_master_key(self, temp_dir):
         key_path = temp_dir / "master.key"
@@ -202,7 +201,7 @@ class TestCredentials(EditorMixin):
 
         try:
             with pytest.raises((PermissionError, OSError)):
-                creds._get_master_key()
+                creds.master_key
         finally:
             # Restore permissions for cleanup
             key_path.chmod(0o600)
@@ -221,8 +220,7 @@ class TestCredentials(EditorMixin):
             credentials_path=str(creds_path), master_key_path=str(key_path)
         )
 
-        config = creds.config()
-        assert config == {}
+        assert creds.config == {}
 
     def test_dynamic_attributes(self, credentials_with_data):
         credentials = credentials_with_data

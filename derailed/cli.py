@@ -22,8 +22,10 @@ class Cli:
         subparsers = parser.add_subparsers(dest="command", help="Commands")
 
         # Edit command
-        edit_parser = subparsers.add_parser("edit", help="Edit credentials")
-        edit_parser.add_argument("--editor", help="Editor to use")
+        subparsers.add_parser(
+            "edit",
+            help="Open the decrypted credentials in `$VISUAL` or `$EDITOR` for editing.",
+        )
 
         # Show command
         subparsers.add_parser("show", help="Show decrypted credentials")
@@ -83,7 +85,7 @@ class Cli:
         credentials = self.get_credentials(args.credentials_path, args.master_key_path)
         self.diffing.ensure_diffing_driver_is_configured()
 
-        if credentials.edit(args.editor) is True:
+        if credentials.edit() is True:
             print("Credentials updated successfully.")
         else:
             print("No changes made.")
@@ -109,14 +111,7 @@ class Cli:
             return
 
         try:
-            if args.command == "generate-key":
-                self.generate_key(args)
-            elif args.command == "edit":
-                self.edit(args)
-            elif args.command == "diff":
-                self.diff(args)
-            elif args.command == "show":
-                self.show(args)
+            getattr(self, args.command.replace("-", "_"))(args)
         except CredentialsError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
