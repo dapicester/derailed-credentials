@@ -1,3 +1,4 @@
+---
 name: Test
 
 on: [push, pull_request]
@@ -10,26 +11,32 @@ jobs:
         python-version: ["3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: uv sync --locked
+      - name: Install dependencies
+        run: uv sync --locked
 
-    - name: Type check with mypy
-      run: uv run mypy
+      - name: Type check with mypy
+        run: uv run mypy
 
-    - name: Test with pytest
-      run: uv run pytest --cov --cov-branch --cov-report=xml
+      - name: Test with pytest
+        run: uv run pytest --junitxml=junit.xml -o junit_family=legacy --cov --cov-branch --cov-report=xml
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        token: dff7f5fb-14b9-40a3-a3ae-d8ae9ae21629
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
