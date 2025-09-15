@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.2] - 2025/09/15
+
+- Fix git diffing driver command
+
 ## [0.3.1] - 2025/09/14
 
 - Fix project script
