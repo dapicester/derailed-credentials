@@ -1,138 +1,110 @@
-import argparse
 import sys
-from functools import reduce
+from dataclasses import dataclass
+from functools import cached_property, reduce
 
-from .core import Credentials, CredentialsError, MasterKeyAlreadyExists
+import click
+
+from .core import Credentials, MasterKeyAlreadyExists
 from .diffing import Diffing
 
 
-class Cli:
-    """Command line interface."""
+@dataclass
+class Derailed:
+    credentials_path: str | None = None
+    master_key_path: str | None = None
 
-    def __init__(self):
-        self.parser = self.build_parser()
-        self.diffing = Diffing()
+    @cached_property
+    def credentials(self) -> Credentials:
+        return Credentials(self.credentials_path, self.master_key_path)
 
-    def build_parser(self) -> argparse.ArgumentParser:
-        parser = argparse.ArgumentParser(
-            prog="derailed", description="Manage encrypted credentials"
+
+@click.group(help="Manage encrypted credentials")
+@click.option("--credentials-path", help="Path to credentials file")
+@click.option("--master-key-path", help="Path to master key file")
+@click.pass_context
+def derailed(ctx, credentials_path: str, master_key_path: str) -> None:
+    ctx.ensure_object(Derailed)
+
+    ctx.obj.credentials_path = credentials_path
+    ctx.obj.master_key_path = master_key_path
+
+
+@derailed.command(
+    short_help="Open the credentials for editing",
+    help="Open the decrypted credentials in `$VISUAL` or `$EDITOR` for editing.",
+)
+@click.pass_context
+def edit(ctx) -> None:
+    Diffing().ensure_diffing_driver_is_configured()
+
+    if ctx.obj.credentials.edit() is True:
+        click.echo("Credentials updated successfully.")
+    else:
+        click.echo("No changes made.")
+
+
+@derailed.command(help="Fetch a value in the decrypted credentials")
+@click.argument("path")
+@click.pass_context
+def fetch(ctx, path: str):
+    data = ctx.obj.credentials.config
+    try:
+        value = reduce(lambda doc, key: doc[key], path.split("."), data)
+        click.echo(str(value))
+        return
+    except (KeyError, TypeError):
+        click.echo(f"Invalid or missing credentials path: {path}")
+        sys.exit(1)
+
+
+@derailed.command(help="Show decrypted credentials")
+@click.pass_context
+def show(ctx) -> None:
+    click.echo(ctx.obj.credentials.show())
+
+
+@derailed.command(help="Enroll/disenroll in decrypted diffs of credentials using git")
+@click.option(
+    "--enroll",
+    help="Enroll project in credentials file diffing with `git diff`",
+    is_flag=True,
+)
+@click.option(
+    "--disenroll",
+    help="Disenroll project in credentials file diffing",
+    is_flag=True,
+)
+@click.argument("content_path", required=False)
+@click.pass_context
+def diff(ctx, enroll: bool, disenroll: bool, content_path: str) -> None:
+    if content_path:
+        click.echo(ctx.obj.credentials.show())
+    elif enroll:
+        Diffing().enroll_project_in_credentials_diffing()
+    elif disenroll:
+        Diffing().disenroll_project_from_credentials_diffing()
+
+
+@derailed.command(help="Generate master key")
+@click.option("--force", is_flag=True)
+@click.pass_context
+def generate_key(ctx, force: bool) -> None:
+    credentials = ctx.obj.credentials
+
+    try:
+        master_key = credentials.create_master_key_file(force)
+    except MasterKeyAlreadyExists:
+        response = input(
+            f"Master key file {credentials.master_key_path} already exists. Overwrite? [y/N]: "
         )
-        parser.add_argument("--credentials-path", help="Path to credentials file")
-        parser.add_argument("--master-key-path", help="Path to master key file")
-
-        subparsers = parser.add_subparsers(dest="command", help="Commands")
-
-        # Edit command
-        subparsers.add_parser(
-            "edit",
-            help="Open the decrypted credentials in `$VISUAL` or `$EDITOR` for editing.",
-        )
-
-        # Show command
-        subparsers.add_parser("show", help="Show decrypted credentials")
-
-        # Fetch command
-        fetch_parser = subparsers.add_parser(
-            "fetch", help="Fetch a value in the decrypted credentials"
-        )
-        fetch_parser.add_argument("path")
-
-        # Diff command
-        diff_parser = subparsers.add_parser(
-            "diff", help="Enroll/disenroll in decrypted diffs of credentials using git"
-        )
-        diff_parser.add_argument(
-            "--enroll",
-            help="Enroll project in credentials file diffing with `git diff`",
-            action="store_true",
-        )
-        diff_parser.add_argument(
-            "--disenroll",
-            help="Disenroll project in credentials file diffing",
-            action="store_true",
-        )
-        diff_parser.add_argument("content_path", nargs="?")
-
-        # Generate key command
-        generate_parser = subparsers.add_parser(
-            "generate-key", help="Generate master key"
-        )
-        generate_parser.add_argument(
-            "--force", help="Overwrite existing file", action="store_true"
-        )
-
-        return parser
-
-    def get_credentials(
-        self, credentials_path=str | None, master_key_path=str | None
-    ) -> Credentials:
-        return Credentials(credentials_path, master_key_path)
-
-    def generate_key(self, args: argparse.Namespace) -> None:
-        credentials = self.get_credentials(args.credentials_path, args.master_key_path)
-
-        try:
-            master_key = credentials.create_master_key_file(args.force)
-        except MasterKeyAlreadyExists:
-            response = input(
-                f"Master key file {credentials.master_key_path} already exists. Overwrite? [y/N]: "
-            )
-            if response.lower() == "y":
-                master_key = credentials.create_master_key_file(force=True)
-            else:
-                print("Aborted.")
-                sys.exit(1)
+        if response.lower() == "y":
+            master_key = credentials.create_master_key_file(force=True)
         else:
-            print(f"Master key {master_key} created at {credentials.master_key_path}")
-            print(
-                f"Keep this key secure! You can also set it as {credentials.MASTER_KEY_ENV} environment variable."
-            )
-
-    def edit(self, args: argparse.Namespace) -> None:
-        credentials = self.get_credentials(args.credentials_path, args.master_key_path)
-        self.diffing.ensure_diffing_driver_is_configured()
-
-        if credentials.edit() is True:
-            print("Credentials updated successfully.")
-        else:
-            print("No changes made.")
-
-    def fetch(self, args: argparse.Namespace) -> None:
-        credentials = self.get_credentials(args.credentials_path, args.master_key_path)
-        data = credentials.config
-        try:
-            value = reduce(lambda doc, key: doc[key], args.path.split("."), data)
-            print(str(value))
-            return
-        except (KeyError, TypeError):
-            print("Invalid or missing credentials path:", args.path)
+            click.secho("Aborted.", fg="red")
             sys.exit(1)
-
-    def diff(self, args: argparse.Namespace) -> None:
-        if args.content_path:
-            credentials = self.get_credentials(args.content_path, args.master_key_path)
-            print(credentials.show())
-        elif args.enroll:
-            self.diffing.enroll_project_in_credentials_diffing()
-        elif args.disenroll:
-            self.diffing.disenroll_project_from_credentials_diffing()
-
-    def show(self, args: argparse.Namespace) -> None:
-        credentials = self.get_credentials(args.credentials_path, args.master_key_path)
-        print(credentials.show())
-
-    def main(self):
-        args = self.parser.parse_args()
-
-        if not args.command:
-            self.parser.print_help()
-            return
-
-        try:
-            getattr(self, args.command.replace("-", "_"))(args)
-        except CredentialsError as e:
-            print(f"Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        except KeyboardInterrupt:
-            print("\nAborted.")
-            sys.exit(1)
+    else:
+        click.echo(f"Master key {master_key} created at {credentials.master_key_path}")
+        click.secho(
+            f"Keep this key secure! You can also set it as {credentials.MASTER_KEY_ENV} environment variable.",
+            fg="red",
+        )

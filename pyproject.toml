@@ -9,6 +9,7 @@ authors = [{ name = "Paolo D'Apice", email = "dapicester@gmail.com" }]
 keywords = ["credentials", "encryption", "cli"]
 dependencies = [
     "addict>=2.4.0",
+    "click>=8.2.1",
     "cryptography",
     "pyyaml>=6.0",
 ]
@@ -18,7 +19,7 @@ Homepage = "https://github.com/dapicester/derailed-credentials/"
 Repository = "https://github.com/dapicester/derailed-credentials/"
 
 [project.scripts]
-derailed = "derailed.__main__:main"
+derailed = "derailed.cli:derailed"
 
 [dependency-groups]
 dev = [

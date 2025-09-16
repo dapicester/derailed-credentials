@@ -3,6 +3,8 @@ import subprocess
 from functools import cached_property
 from pathlib import Path
 
+import click
+
 GITATTRIBUTES_ENTRY = """
 config/credentials/*.yml.enc diff=derailed_credentials
 config/credentials.yml.enc diff=derailed_credentials
@@ -22,16 +24,16 @@ class Diffing:
 
     def enroll_project_in_credentials_diffing(self) -> None:
         if self.enrolled_in_credentials_diffing:
-            print("Project is already enrolled in credentials file diffing.")
+            click.echo("Project is already enrolled in credentials file diffing.")
             return
 
         with self.gitattributes.open(mode="a") as f:
             f.write(GITATTRIBUTES_ENTRY)
-        print("Enrolled project in credentials file diffing!")
+        click.echo("Enrolled project in credentials file diffing!")
 
     def disenroll_project_from_credentials_diffing(self) -> None:
         if not self.enrolled_in_credentials_diffing:
-            print("Project is not enrolled in credentials file diffing.")
+            click.echo("Project is not enrolled in credentials file diffing.")
             return
 
         self.gitattributes.write_text(
@@ -39,7 +41,7 @@ class Diffing:
         )
         if self.gitattributes.stat().st_size == 0:
             self.gitattributes.unlink()
-        print("Disenrolled project from credentials file diffing!")
+        click.echo("Disenrolled project from credentials file diffing!")
 
     def ensure_diffing_driver_is_configured(self) -> None:
         if self.enrolled_in_credentials_diffing and not self.diffing_driver_configured:
@@ -63,4 +65,4 @@ class Diffing:
         subprocess.check_call(
             ["git", "config", "diff.derailed_credentials.textconv", "derailed diff"]
         )
-        print("Configured Git diff driver for credentials.")
+        click.echo("Configured Git diff driver for credentials.")
