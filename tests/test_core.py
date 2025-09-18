@@ -12,10 +12,8 @@ from derailed.core import (
     MasterKeyMissing,
 )
 
-from .base import EditorMixin
 
-
-class TestCredentials(EditorMixin):
+class TestCredentials:
     def test_generate_master_key(self):
         key1 = Credentials.generate_master_key()
         key2 = Credentials.generate_master_key()
@@ -116,26 +114,6 @@ class TestCredentials(EditorMixin):
 
         with pytest.raises(MasterKeyAlreadyExists):
             credentials.create_master_key_file()
-
-    def test_edit_success(self, credentials_with_key, temp_dir):
-        # Mock file operations
-        original_content = "api_key: old_value\n"
-        new_content = "api_key: new_value\ndatabase:\n  password: secret\n"
-
-        with self.editor_write(new_content):
-            with patch.object(
-                credentials_with_key, "show", return_value=original_content
-            ):
-                changed = credentials_with_key.edit()
-                assert changed is True
-
-    def test_edit_no_changes(self, credentials_with_key):
-        content = "api_key: value\n"
-
-        with self.editor_write(content):
-            with patch.object(credentials_with_key, "show", return_value=content):
-                changed = credentials_with_key.edit()
-                assert changed is False
 
     def test_invalid_encryption_key(self, credentials, temp_dir):
         # Create credentials with one key

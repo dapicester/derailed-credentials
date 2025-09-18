@@ -1,6 +1,9 @@
+import os
 import re
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
@@ -9,10 +12,16 @@ from derailed.cli import derailed
 from derailed.core import Credentials
 from derailed.diffing import GITATTRIBUTES_ENTRY
 
-from .base import EditorMixin
+INLINE_EDITOR = """python -c 'import sys, os; open(sys.argv[1], "w").write(os.environ["CONTENT"])'"""
 
 
-class TestCLI(EditorMixin):
+@contextmanager
+def editor_write(content: str) -> None:
+    with patch.dict(os.environ, {"EDITOR": INLINE_EDITOR, "CONTENT": content}):
+        yield
+
+
+class TestCLI:
     @pytest.fixture
     def cli_env(self, temp_dir, project_root_dir):
         # TODO: DRY
@@ -92,16 +101,16 @@ class TestCLI(EditorMixin):
         return credentials
 
     def test_cli_edit(self, credentials_with_data, cli_env):
-        with self.editor_write("secret: password"):
+        with editor_write("secret: password"):
             result = self.run_cli(["edit"], cli_env)
         assert result.exit_code == 0
-        assert "Credentials updated successfully" in result.output
+        assert "Credentials updated" in result.output
 
     def test_cli_edit_no_changes(self, credentials_with_data, cli_env):
-        with self.editor_write(credentials_with_data.show()):
+        with editor_write(credentials_with_data.show()):
             result = self.run_cli(["edit"], cli_env)
         assert result.exit_code == 0
-        assert "No changes made" in result.output
+        assert "Credentials updated" in result.output
 
     def test_cli_show(self, credentials_with_data, cli_env):
         result = self.run_cli(["show"], cli_env)
@@ -201,7 +210,7 @@ class TestCLI(EditorMixin):
         result = self.run_cli(["diff", "--enroll"], cli_env)
         assert result.exit_code == 0
 
-        with self.editor_write("secret: password"):
+        with editor_write("secret: password"):
             result = self.run_cli(["edit"], cli_env)
         assert result.exit_code == 0
 

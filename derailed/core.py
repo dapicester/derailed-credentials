@@ -1,9 +1,9 @@
 import base64
 import os
-import shlex
-import tempfile
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Generic, TypeVar
+from tempfile import NamedTemporaryFile
+from typing import Any, Dict, Generator, Generic, TypeVar
 
 from addict import Dict as AddictDict
 from cryptography.fernet import Fernet
@@ -165,15 +165,8 @@ class Credentials:
         """Return decrypted credentials as YAML string."""
         return yaml_dump(self.config.to_dict())
 
-    @classmethod
-    def open_external_editor(cls, file_name):
-        import subprocess
-
-        editor = os.environ.get("EDITOR", "nano")
-        cmd = shlex.split(editor) + [file_name]
-        subprocess.run(cmd, check=True)
-
-    def edit(self) -> bool:
+    @contextmanager
+    def change(self) -> Generator[str, None, None]:
         """
         Edit credentials in an external editor.
 
@@ -182,27 +175,25 @@ class Credentials:
         """
 
         # Get current content
-        current_content = self.show()
+        with self._writing(self.show()) as file_name:
+            yield file_name
 
-        # Create temporary file
-        with tempfile.NamedTemporaryFile(mode="w+", suffix=".yml") as tmp_file:
-            tmp_file.write(current_content)
+    @contextmanager
+    def _writing(self, content) -> Generator[str, None, None]:
+        with NamedTemporaryFile(mode="w+", suffix=".yml") as tmp_file:
+            tmp_file.write(content)
             tmp_file.flush()
 
-            # Open editor, unless we are running tests
-            self.open_external_editor(tmp_file.name)
+            yield tmp_file.name
 
             # Read back the content
-            with open(tmp_file.name, "r") as f:
-                new_content = f.read()
+            tmp_file.seek(0)
+            new_content = tmp_file.read()
 
             # Parse and save if changed
-            if new_content == current_content:
-                return False
-
-            new_config = yaml_load(new_content) or {}
-            self.config = new_config
-            return True
+            if new_content != content:
+                new_config = yaml_load(new_content) or {}
+                self.config = new_config
 
     @classmethod
     def generate_master_key(cls) -> str:

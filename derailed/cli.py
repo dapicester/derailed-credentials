@@ -1,3 +1,4 @@
+import os
 import sys
 from dataclasses import dataclass
 from functools import cached_property, reduce
@@ -6,6 +7,15 @@ import click
 
 from .core import Credentials, MasterKeyAlreadyExists
 from .diffing import Diffing
+
+
+def open_external_editor(file_name: str) -> None:
+    import shlex
+    import subprocess
+
+    editor = os.environ.get("EDITOR", "nano")
+    cmd = shlex.split(editor) + [file_name]
+    subprocess.run(cmd, check=True)
 
 
 @dataclass
@@ -37,10 +47,10 @@ def derailed(ctx, credentials_path: str, master_key_path: str) -> None:
 def edit(ctx) -> None:
     Diffing().ensure_diffing_driver_is_configured()
 
-    if ctx.obj.credentials.edit() is True:
-        click.echo("Credentials updated successfully.")
-    else:
-        click.echo("No changes made.")
+    click.echo(f"Editing {ctx.obj.credentials.credentials_path} ...")
+    with ctx.obj.credentials.change() as file_name:
+        open_external_editor(file_name)
+    click.echo("Credentials updated.")
 
 
 @derailed.command(help="Fetch a value in the decrypted credentials")
