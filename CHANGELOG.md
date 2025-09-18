@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.0] - 2025/09/18
+
+- Rewrite CLI using Click
+
 ## [0.3.2] - 2025/09/15
 
 - Fix git diffing driver command

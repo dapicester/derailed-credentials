@@ -1,6 +1,6 @@
 [project]
 name = "derailed-credentials"
-version = "0.3.2"
+version = "0.4.0"
 description = "Python equivalent of Rails credentials system"
 readme = "README.md"
 requires-python = ">=3.11"
