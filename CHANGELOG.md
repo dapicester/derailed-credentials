@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.1] - 2025/09/23
+
+- Fix data not persisted after edit
+
 ## [0.4.0] - 2025/09/18
 
 - Rewrite CLI using Click
