@@ -108,12 +108,19 @@ def test_cli_edit(credentials_with_data, cli_env):
     assert result.exit_code == 0
     assert "Credentials updated" in result.output
 
+    credentials_with_data._config_cache = None
+    assert credentials_with_data.show() == "secret: password\n"
+
 
 def test_cli_edit_no_changes(credentials_with_data, cli_env):
-    with editor_write(credentials_with_data.show()):
+    current = credentials_with_data.show()
+    with editor_write(current):
         result = run_cli(["edit"], cli_env)
     assert result.exit_code == 0
     assert "Credentials updated" in result.output
+
+    credentials_with_data._config_cache = None
+    assert credentials_with_data.show() == current
 
 
 def test_cli_show(credentials_with_data, cli_env):

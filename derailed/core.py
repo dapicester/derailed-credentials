@@ -187,13 +187,13 @@ class Credentials:
             yield tmp_file.name
 
             # Read back the content
-            tmp_file.seek(0)
-            new_content = tmp_file.read()
+            with open(tmp_file.name, "r") as f:
+                new_content = f.read()
 
-            # Parse and save if changed
-            if new_content != content:
-                new_config = yaml_load(new_content) or {}
-                self.config = new_config
+        # Parse and save if changed
+        if new_content != content:
+            new_config = yaml_load(new_content) or {}
+            self.config = new_config
 
     @classmethod
     def generate_master_key(cls) -> str:

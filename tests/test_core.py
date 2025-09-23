@@ -128,6 +128,28 @@ def test_create_master_key_file_exists_abort(credentials, temp_dir):
         credentials.create_master_key_file()
 
 
+def test_change_success(credentials_with_data):
+    data = credentials_with_data.config
+    with credentials_with_data.change() as file_name:
+        with open(file_name, "w") as f:
+            f.write("api_key: new_value\ndatabase:\n  password: secret\n")
+
+    assert credentials_with_data.config != data
+    assert credentials_with_data.config == {
+        "api_key": "new_value",
+        "database": {"password": "secret"},
+    }
+
+
+def test_edit_no_changes(credentials_with_data):
+    current = credentials_with_data.show()
+    with credentials_with_data.change() as file_name:
+        with open(file_name, "w") as f:
+            f.write(current)
+
+    assert credentials_with_data.show() == current
+
+
 def test_invalid_encryption_key(credentials, temp_dir):
     # Create credentials with one key
     key1 = Credentials.generate_master_key()
