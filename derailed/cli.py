@@ -89,7 +89,7 @@ def show(ctx) -> None:
 @click.pass_context
 def diff(ctx, enroll: bool, disenroll: bool, content_path: str) -> None:
     if content_path:
-        click.echo(ctx.obj.credentials.show())
+        click.echo(Credentials(content_path, ctx.obj.master_key_path).show())
     elif enroll:
         Diffing().enroll_project_in_credentials_diffing()
     elif disenroll:

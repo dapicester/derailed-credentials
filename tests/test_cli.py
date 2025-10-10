@@ -155,10 +155,14 @@ def test_cli_diff_nothing(credentials_with_data, cli_env):
     assert result.output == ""
 
 
-def test_cli_diff_show(credentials_with_data, cli_env):
-    result = run_cli(["diff", cli_env["creds_path"]], cli_env)
+def test_cli_diff_show(credentials_with_data, cli_env, temp_dir):
+    given_path = str(temp_dir / "new_credentials.yml.enc")
+    given_credentials = Credentials(given_path, cli_env["key_path"])
+    given_credentials.config = {"test_key": "new value"}
+
+    result = run_cli(["diff", given_path], cli_env)
     assert result.exit_code == 0
-    assert "test_key: test_value" in result.output
+    assert "test_key: new value" in result.output
 
 
 @pytest.fixture
