@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.2] - 2025/10/10
+
+- Add `--version` cli option
+- Fix `diff` command to show decrypted data from argument
+
 ## [0.4.1] - 2025/09/23
 
 - Fix data not persisted after edit
