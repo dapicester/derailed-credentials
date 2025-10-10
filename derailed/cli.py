@@ -31,6 +31,7 @@ class Derailed:
 @click.group(help="Manage encrypted credentials")
 @click.option("--credentials-path", help="Path to credentials file")
 @click.option("--master-key-path", help="Path to master key file")
+@click.version_option(package_name="derailed-credentials")
 @click.pass_context
 def derailed(ctx, credentials_path: str, master_key_path: str) -> None:
     ctx.ensure_object(Derailed)
