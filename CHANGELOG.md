@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.3] - 2026/01/09
+
+- Add support for Python 3.10 through 3.13
+
 ## [0.4.2] - 2025/10/10
 
 - Add `--version` cli option
