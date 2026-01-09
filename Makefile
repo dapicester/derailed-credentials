@@ -12,6 +12,10 @@ test-watch:  ## Run tests on file changes
 lint:  ## Run linting
 	ruff check
 
+tox:
+	uv tool install tox --with tox-uv
+	tox
+
 format:  ## Format code
 	ruff check --select I --fix
 	ruff format
