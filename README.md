@@ -44,3 +44,28 @@ can be set using the `MASTER_KEY` environment variable.
 Don't lose this master key! Put it in a password manager your team can access.
 Should you lose it no one, including you, will be able to access any encrypted
 credentials.
+
+## Example
+
+First generate a master key and store it securely:
+
+    $ derailed generate-key
+    Master key [redacted] created at config/master.key
+    Keep this key secure! You can also set it as MASTER_KEY environment variable.
+
+Ensure the master key is not versioned:
+
+    $ echo "config/master.key" >> .gitignore
+
+Enable the git diff driver:
+
+    $ derailed diff --enroll
+
+Edit the credentials:
+
+    $ derailed edit
+
+Access the credentials either programmatically or with the CLI:
+
+    $ derailed fetch my.key
+
