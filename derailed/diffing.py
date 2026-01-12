@@ -29,6 +29,9 @@ class Diffing:
 
         with self.gitattributes.open(mode="a") as f:
             f.write(GITATTRIBUTES_ENTRY)
+
+        self.configure_diffing_driver()
+
         click.echo("Enrolled project in credentials file diffing!")
 
     def disenroll_project_from_credentials_diffing(self) -> None:
